@@ -41,7 +41,6 @@ The folder [`Data_analysis`](Data_analysis/) is dedicated to the extraction and 
 
 [`MIMICIV_ARDS_Ethnicity.Rmd`](Data_analysis/MIMICIV_ARDS_Ethnicity.Rmd): An R Markdown file focusing on the comparative analysis between Caucasian and African-American patient groups.
 
-[`MIMICIV_ARDS_sensitivity_analysis.Rmd`](Data_analysis/MIMICIV_ARDS_sensitivity_analysis.Rmd): This R Markdown file is dedicated to performing a sensitivity analysis on patients with ventilation durations exceeding 24 hours.
 
 
 
