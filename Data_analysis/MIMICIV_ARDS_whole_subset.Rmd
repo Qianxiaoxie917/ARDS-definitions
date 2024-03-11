@@ -1,0 +1,196 @@
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+if(!require(bigrquery)) {
+  install.packages("bigrquery")
+  library("bigrquery")
+}
+
+
+
+project_id <- "oxgenator"  # Google Cloud project ID
+
+# Wrapper for running BigQuery queries.
+run_query <- function(query) return(bigrquery::bq_table_download(
+  bigrquery::bq_project_query(x = project_id, query=query)))
+# Library for fitting generalized additive models (GAMs)
+library(mgcv)
+if(!require(mgcv)) {
+  install.packages("mgcv")
+  library("mgcv")
+}
+```
+
+
+```{r}
+pat_MIMICIV_ARDS <- run_query('
+SELECT * FROM oxgenator.mimiciv_derived.patient_mimiciv_ards')
+
+save(pat_MIMICIV_ARDS, file = "pat_MIMICIV_ARDS.RData")
+```
+
+
+```{r}
+#Remove heights below 50cm and above 300cm
+pat_MIMICIV_ARDS$height[pat_MIMICIV_ARDS$height > 300 | pat_MIMICIV_ARDS$height < 50] <- NA
+
+# Remove weights below 20kg and above 600kg
+pat_MIMICIV_ARDS$weight[pat_MIMICIV_ARDS$weight < 20 | pat_MIMICIV_ARDS$weight > 600] <- NA
+
+# Compute the body mass index
+pat_MIMICIV_ARDS$bmi <- pat_MIMICIV_ARDS$weight / (pat_MIMICIV_ARDS$height/100)^2
+# Remove BMIs below 15 or above 100
+pat_MIMICIV_ARDS$bmi[pat_MIMICIV_ARDS$bmi < 15 | pat_MIMICIV_ARDS$bmi > 100] <- NA
+
+pat_MIMICIV_ARDS$gender <- as.factor(pat_MIMICIV_ARDS$gender)
+
+pat_MIMICIV_ARDS$unit_type <- as.factor(pat_MIMICIV_ARDS$unittype)
+
+
+pat_MIMICIV_ARDS$mortality_in_Hospt[pat_MIMICIV_ARDS$mortality_in_ICU == 1] <- TRUE
+
+
+# ICU stays that do not have any measurements are currently NA and should be 0.
+pat_MIMICIV_ARDS$nOxy[which(is.na(pat_MIMICIV_ARDS$nOxy))] <- 0
+
+
+##select subset for patients with enough information
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS
+
+cat("Total number of ICU stays:", nrow(pat_MIMICIV_ARDS_subset))
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[which(pat_MIMICIV_ARDS_subset$first_stay),]
+
+cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!is.na(pat_MIMICIV_ARDS_subset$mortality_within_30_days), ]
+
+cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!(is.na(pat_MIMICIV_ARDS_subset$age)), ]
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!(is.na(pat_MIMICIV_ARDS_subset$gender)), ]
+
+cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+#pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!(is.na(pat_MIMICIV_ARDS_subset$bmi)), ]
+
+#cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+# pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!(is.na(pat_MIMICIV_ARDS_subset$sofatotal)), ]
+# 
+# cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+
+pat_MIMICIV_ARDS_subset$Peep5 <- pat_MIMICIV_ARDS_subset$peep_max >=5
+
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!is.na(pat_MIMICIV_ARDS_subset$has_ards_disease) | !is.na(pat_MIMICIV_ARDS_subset$has_heart_failure_disease), ]
+
+
+cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[((!is.na(pat_MIMICIV_ARDS_subset$chest_ards)) & pat_MIMICIV_ARDS_subset$has_heart_failure_disease == F) |  pat_MIMICIV_ARDS_subset$has_ards_disease == T, ]
+
+
+cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[is.na(pat_MIMICIV_ARDS_subset$itemid), ]
+
+cat("\nPatients selected so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+pat_MIMICIV_ARDS_subset_New <- pat_MIMICIV_ARDS_subset
+
+pat_MIMICIV_ARDS_subset_Berlin <- pat_MIMICIV_ARDS_subset
+
+pat_MIMICIV_ARDS_subset_New <- pat_MIMICIV_ARDS_subset_New[!(is.na(pat_MIMICIV_ARDS_subset_New$spo2fio2ratio_min)), ]
+
+cat("\nPatients selected for New so far:", nrow(pat_MIMICIV_ARDS_subset_New))
+
+
+pat_MIMICIV_ARDS_subset_Berlin <- pat_MIMICIV_ARDS_subset_Berlin[!(is.na(pat_MIMICIV_ARDS_subset_Berlin$pao2fio2ratio_min)), ]
+
+cat("\nPatients selected for Berlin so far:", nrow(pat_MIMICIV_ARDS_subset_Berlin))
+
+
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!(is.na(pat_MIMICIV_ARDS_subset$pao2fio2ratio_min)), ]
+
+
+pat_MIMICIV_ARDS_subset <- pat_MIMICIV_ARDS_subset[!(is.na(pat_MIMICIV_ARDS_subset$spo2fio2ratio_min)), ]
+
+cat("\nPatients selected for all so far:", nrow(pat_MIMICIV_ARDS_subset))
+
+
+
+```
+
+
+```{r}
+source("funs.R")
+
+pat_MIMICIV_ARDS_subset_Berlin$ARDS <- cut(pat_MIMICIV_ARDS_subset_Berlin$pao2fio2ratio_min, 
+                breaks = c(-Inf, 100, 200, 300, Inf), 
+                labels = c("Severe", "Moderate", "Mild", "No"),
+                right = TRUE, include.lowest = TRUE)
+
+MIMICIV_ARDS_IV_Berlin <- Select_fun(pat_MIMICIV_ARDS_subset_Berlin)
+
+save(MIMICIV_ARDS_IV_Berlin , file = "MIMICIV_ARDS_IV_Berlin.RData")
+```
+
+
+
+```{r}
+pat_MIMICIV_ARDS_subset_New$ARDS <- cut(pat_MIMICIV_ARDS_subset_New$spo2fio2ratio_min, 
+                breaks = c(-Inf, 148, 235, 315, Inf), 
+                labels = c("Severe", "Moderate", "Mild", "No"),
+                right = TRUE, include.lowest = TRUE)
+
+MIMICIV_ARDS_IV_New <- Select_fun(pat_MIMICIV_ARDS_subset_New)
+
+save(MIMICIV_ARDS_IV_New, file = "MIMICIV_ARDS_IV_New.RData")
+```
+
+```{r}
+MIMICIV_ARDS_Supp <- pat_MIMICIV_ARDS_subset_New[pat_MIMICIV_ARDS_subset_New$vent_status == 0, ]
+
+MIMICIV_ARDS_Supp <- MIMICIV_ARDS_Supp[!is.na(MIMICIV_ARDS_Supp$ARDS), ]
+
+MIMICIV_ARDS_Supp$ARDS <- factor(MIMICIV_ARDS_Supp$ARDS, levels = c("No", "Mild", "Moderate", "Severe"))
+
+
+save(MIMICIV_ARDS_Supp, file = "MIMICIV_ARDS_Supp.RData")
+```
+
+
+
+```{r}
+pat_MIMICIV_ARDS_subset$ARDS_PF <-  cut(pat_MIMICIV_ARDS_subset$pao2fio2ratio_min, 
+                breaks = c(-Inf, 100, 200, 300, Inf), 
+                labels = c("Severe", "Moderate", "Mild", "No"),
+                right = TRUE, include.lowest = TRUE)
+
+
+
+pat_MIMICIV_ARDS_subset$ARDS_SF <-  cut(pat_MIMICIV_ARDS_subset$spo2fio2ratio_min, 
+                breaks = c(-Inf, 148, 235, 315, Inf), 
+                labels = c("Severe", "Moderate", "Mild", "No"),
+                right = TRUE, include.lowest = TRUE)
+
+MIMICIV_ARDS_IV_Combined <- Select_fun(pat_MIMICIV_ARDS_subset)
+
+
+
+save(MIMICIV_ARDS_IV_Combined, file = "MIMICIV_ARDS_IV_Combined.RData")
+```
+
+
+
+
+
+

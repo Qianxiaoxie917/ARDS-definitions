@@ -1,0 +1,245 @@
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+source("funs.R")
+```
+
+
+
+```{r}
+load("MIMICIV_ARDS_IV_Berlin.RData")
+
+load("MIMICIV_ARDS_IV_New.RData")
+
+load("MIMICIV_ARDS_IV_Combined.RData")
+
+load("MIMICIV_ARDS_Supp.RData")
+
+```
+
+
+ARDS for both definitions
+```{r}
+nrow(MIMICIV_ARDS_IV_Berlin)
+
+table(MIMICIV_ARDS_IV_Berlin$ARDS)
+
+nrow(MIMICIV_ARDS_IV_New)
+
+table(MIMICIV_ARDS_IV_New$ARDS)
+
+
+```
+
+ARDS for intersection subset
+```{r}
+nrow(MIMICIV_ARDS_IV_Combined)
+
+table(MIMICIV_ARDS_IV_Combined$ARDS_PF)
+
+table(MIMICIV_ARDS_IV_Combined$ARDS_SF)
+
+
+table(MIMICIV_ARDS_IV_Combined$ARDS_PF, MIMICIV_ARDS_IV_Combined$ARDS_SF)
+```
+
+ARDS for patients supplemental oxygen
+```{r}
+nrow(MIMICIV_ARDS_Supp)
+
+table(MIMICIV_ARDS_Supp$ARDS)
+```
+
+Plot for ARDS distribution comparison
+```{r}
+p0 <- DistComplot_fun(MIMICIV_ARDS_IV_Combined)
+
+
+print(p0)
+
+```
+
+```{r}
+pdf(file = "MIMICIV-Invaisve-Intubated-ARDS(Comparsion).pdf", width = 5,
+    height = 5)
+
+p0
+
+dev.off()
+```
+
+
+
+Chi-square test for ARDS distribution
+```{r}
+Chitest_fun(MIMICIV_ARDS_IV_Combined)
+```
+```{r}
+MIMICIV_ARDS_IV_Combined_withoutno <- MIMICIV_ARDS_IV_Combined[MIMICIV_ARDS_IV_Combined$ARDS_PF != "No" & MIMICIV_ARDS_IV_Combined$ARDS_SF != "No", ]
+
+MIMICIV_ARDS_IV_Combined_withoutno$ARDS_PF <- droplevels(MIMICIV_ARDS_IV_Combined_withoutno$ARDS_PF)
+
+MIMICIV_ARDS_IV_Combined_withoutno$ARDS_SF <- droplevels(MIMICIV_ARDS_IV_Combined_withoutno$ARDS_SF)
+
+
+
+nrow(MIMICIV_ARDS_IV_Combined_withoutno)
+
+Chitest_fun_withoutno(MIMICIV_ARDS_IV_Combined_withoutno)
+```
+```{r}
+MIMICIV_ARDS_IV_Berlin_withoutno <- MIMICIV_ARDS_IV_Berlin[MIMICIV_ARDS_IV_Berlin$ARDS != "No", ]
+
+MIMICIV_ARDS_IV_Berlin_withoutno$ARDS <- droplevels(MIMICIV_ARDS_IV_Berlin_withoutno$ARDS)
+
+MIMICIV_ARDS_IV_New_withoutno <- MIMICIV_ARDS_IV_New[MIMICIV_ARDS_IV_New$ARDS != "No", ]
+
+MIMICIV_ARDS_IV_New_withoutno$ARDS <- droplevels(MIMICIV_ARDS_IV_New_withoutno$ARDS)
+
+```
+
+
+```{r}
+p1 <- Mosaic_fun(MIMICIV_ARDS_IV_Combined)
+
+
+print(p1)
+
+
+
+
+
+```
+
+
+```{r}
+pdf(file = "MIMICIV-Invasive-Intubated-ARDS (New VS Berlin).pdf", width = 11.5,
+    height = 5.5)
+
+p0_adjusted <- p0 + theme(plot.margin = margin(t = 35, r = 20, b = 5, l = 5, unit = "pt")) 
+
+p1_adjusted <- p1 + theme(plot.margin = margin(t = 5, r = 5, b = 35, l = 5, unit = "pt")) 
+
+
+gridExtra::grid.arrange(p0_adjusted, p1_adjusted, nrow = 1 , widths = c(1, 1.2))
+
+dev.off()
+```
+
+
+
+
+
+
+```{r}
+rate_data1 <- RatesComp_fun(MIMICIV_ARDS_IV_Berlin, MIMICIV_ARDS_IV_New)
+
+rate_data2 <- RatesComp_fun(MIMICIV_ARDS_IV_Combined)
+
+rate_data3 <- RatesComp_fun(MIMICIV_ARDS_IV_Berlin, MIMICIV_ARDS_Supp)
+
+
+rate_data11 <- RatesComp_fun(MIMICIV_ARDS_IV_Berlin_withoutno, MIMICIV_ARDS_IV_New_withoutno)
+rate_data21 <- RatesComp_fun(MIMICIV_ARDS_IV_Combined_withoutno)
+
+
+
+
+```
+
+
+
+
+
+```{r}
+CMHtest_fun(MIMICIV_ARDS_IV_Berlin, MIMICIV_ARDS_IV_New)
+```
+
+```{r}
+CMHtest_fun(MIMICIV_ARDS_IV_Combined)
+```
+
+
+```{r}
+nrow(MIMICIV_ARDS_IV_Combined_withoutno)
+
+nrow(MIMICIV_ARDS_IV_New_withoutno)
+
+nrow(MIMICIV_ARDS_IV_Berlin_withoutno)
+```
+
+```{r}
+CMHtest_fun(MIMICIV_ARDS_IV_Combined_withoutno)
+```
+```{r}
+CMHtest_fun(MIMICIV_ARDS_IV_New_withoutno, MIMICIV_ARDS_IV_Berlin_withoutno)
+```
+
+
+
+```{r}
+CMHtest_fun(MIMICIV_ARDS_Supp, MIMICIV_ARDS_IV_Berlin)
+```
+
+
+
+
+```{r}
+
+p2 <- Complot_fun(rate_data1 , lep = "none")
+
+p2
+
+```
+
+
+
+```{r}
+p3 <- Complot_fun(rate_data2, tls = "Intersection subset",  show_y_axis = FALSE)
+
+
+print(p3)
+```
+
+```{r}
+pdf(file = "MIMICIV-Intubated-ARDS(Comparsion Separate vs Intersection).pdf", width = 9,
+    height = 7)
+
+gridExtra::grid.arrange(p2, p3, nrow = 1 , widths = c(1, 1.05))
+
+dev.off()
+```
+
+```{r}
+
+p11 <- Complot_fun(rate_data11 , lep = "none")
+
+p11
+
+```
+
+```{r}
+p4 <- Complot_fun(rate_data3, tls = "", labs = c("Intubated ARDS", "Supplemental Oxygen ARDS"))
+  
+print(p4)
+
+```
+
+
+
+```{r}
+pdf(file = "MIMICIV-ARDS(Supplemental Oxygen).pdf", width = 4.8,
+    height = 5)
+
+p4
+
+dev.off()
+```
+
+
+
+
+
+

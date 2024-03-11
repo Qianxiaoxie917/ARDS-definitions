@@ -1,0 +1,176 @@
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+source("funs.R")
+```
+
+
+```{r}
+load("MIMICIV_ARDS_IV_Berlin.RData")
+
+
+load("MIMICIV_ARDS_IV_New.RData")
+
+load("MIMICIV_ARDS_IV_Combined.RData")
+
+```
+
+
+```{r}
+MIMICIV_ARDS_IV_Berlin_white <- MIMICIV_ARDS_IV_Berlin[grepl("WHITE| PORTUGUESE", MIMICIV_ARDS_IV_Berlin$race, ignore.case = TRUE),]
+
+MIMICIV_ARDS_IV_Berlin_black <- MIMICIV_ARDS_IV_Berlin[grepl("BLACK", MIMICIV_ARDS_IV_Berlin$race, ignore.case = TRUE),]
+
+```
+
+
+
+```{r}
+nrow(MIMICIV_ARDS_IV_Berlin_white)
+
+table(MIMICIV_ARDS_IV_Berlin_white$ARDS)
+
+nrow(MIMICIV_ARDS_IV_Berlin_black)
+
+table(MIMICIV_ARDS_IV_Berlin_black$ARDS)
+
+```
+
+```{r}
+MIMICIV_ARDS_IV_New_white <- MIMICIV_ARDS_IV_New[grepl("WHITE| PORTUGUESE", MIMICIV_ARDS_IV_New$race, ignore.case = TRUE),]
+
+MIMICIV_ARDS_IV_New_black <- MIMICIV_ARDS_IV_New[grepl("BLACK", MIMICIV_ARDS_IV_New$race, ignore.case = TRUE),]
+
+```
+
+
+
+```{r}
+nrow(MIMICIV_ARDS_IV_New_white)
+
+table(MIMICIV_ARDS_IV_New_white$ARDS)
+
+nrow(MIMICIV_ARDS_IV_New_black)
+
+table(MIMICIV_ARDS_IV_New_black$ARDS)
+
+```
+
+
+
+```{r}
+MIMICIV_ARDS_IV_Combined_white <- MIMICIV_ARDS_IV_Combined[grepl("WHITE| PORTUGUESE", MIMICIV_ARDS_IV_Combined$race, ignore.case = TRUE),]
+
+MIMICIV_ARDS_IV_Combined_black <- MIMICIV_ARDS_IV_Combined[grepl("BLACK", MIMICIV_ARDS_IV_Combined$race, ignore.case = TRUE),]
+
+```
+
+
+```{r}
+nrow(MIMICIV_ARDS_IV_Combined_white)
+
+table(MIMICIV_ARDS_IV_Combined_white$ARDS_PF)
+
+table(MIMICIV_ARDS_IV_Combined_white$ARDS_SF)
+
+nrow(MIMICIV_ARDS_IV_Combined_black)
+
+table(MIMICIV_ARDS_IV_Combined_black$ARDS_PF)
+
+table(MIMICIV_ARDS_IV_Combined_black$ARDS_SF)
+
+```
+
+
+```{r}
+table(MIMICIV_ARDS_IV_Combined_white$ARDS_PF, MIMICIV_ARDS_IV_Combined_white$ARDS_SF)
+
+
+table(MIMICIV_ARDS_IV_Combined_black$ARDS_PF, MIMICIV_ARDS_IV_Combined_black$ARDS_SF)
+```
+
+
+```{r}
+p5 <- DistComplot_fun(MIMICIV_ARDS_IV_New_white, labs= "Caucasian",  lep="none")
+
+p6 <- DistComplot_fun(MIMICIV_ARDS_IV_New_black, labs= "African-American", ylb = "", )
+
+p5
+
+p6
+
+```
+
+```{r}
+pdf(file = "MIMICIV-Intubated-ARDS(White vs Blacks).pdf", width = 5,
+    height = 5)
+
+gridExtra::grid.arrange(p5, p6, nrow = 1 , widths = c(1, 1.40))
+
+dev.off()
+```
+
+
+```{r}
+p7 <-  Mosaic_fun(MIMICIV_ARDS_IV_Combined_white, lep = "none")
+
+p7
+
+p8 <-  Mosaic_fun(MIMICIV_ARDS_IV_Combined_black, show_y_axis = FALSE)
+
+p8
+```
+
+
+```{r}
+pdf(file = "MIMICIV-Intubated-ARDS(White vs Blacks)_mosaic.pdf", width = 10,
+    height = 5)
+
+gridExtra::grid.arrange(p7, p8, nrow = 1 , widths = c(0.975, 1))
+
+dev.off()
+```
+
+
+```{r}
+CMHtest_fun(MIMICIV_ARDS_IV_Berlin_white, MIMICIV_ARDS_IV_Berlin_black)
+
+```
+
+```{r}
+CMHtest_fun(MIMICIV_ARDS_IV_New_white, MIMICIV_ARDS_IV_New_black)
+
+```
+
+```{r}
+rate_data4 <- RatesComp_fun(MIMICIV_ARDS_IV_Berlin_white, MIMICIV_ARDS_IV_Berlin_black)
+
+rate_data5 <- RatesComp_fun(MIMICIV_ARDS_IV_New_white, MIMICIV_ARDS_IV_New_black)
+
+```
+
+```{r}
+p9 <- Complot_fun(rate_data4,tls= expression(atop("ARDS category based on", PaO[2] / FiO[2] * " ratio")), lep = "none", labs = c("Caucasian","African-American"))
+
+```
+
+
+
+```{r}
+p10 <- Complot_fun(rate_data5,tls=expression(atop("ARDS category based on", SpO[2] / FiO[2] * " ratio")), labs = c("Caucasian","African-American"), show_y_axis = F)
+```
+
+
+```{r}
+pdf(file = "MIMICIV-Intubated-ARDS(Comparsion White vs black).pdf", width = 7,
+    height = 5)
+
+gridExtra::grid.arrange(p9, p10, nrow = 1 , widths = c(1, 1.05))
+
+dev.off()
+```
+
+
+
