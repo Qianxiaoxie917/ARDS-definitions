@@ -11,7 +11,7 @@ FROM `oxgenator.mimiciv_hosp.diagnoses_icd` AS icd)
 
 SELECT
 icd_presence.hadm_id AS hadm_id,
-COUNT(CASE WHEN icd_presence.icd_code  LIKE 'J80%' or icd_presence.icd_code LIKE '51882%' THEN 1 END) > 0 AS has_pneumonia_disease,
+COUNT(CASE WHEN icd_presence.icd_code  LIKE 'J80%' or icd_presence.icd_code LIKE '51882%' THEN 1 END) > 0 AS has_ards_disease,
 COUNT(CASE WHEN icd_presence.icd_code  LIKE 'I50%'   or 
 icd_presence.icd_num = 428  THEN 1 END) > 0 AS has_heart_failure_disease
 FROM icd_presence
